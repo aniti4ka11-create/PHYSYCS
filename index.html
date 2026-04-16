@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Магнитное поле тока</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#0b0f1a;
+  --text:#fff;
+  --accent:#00d4ff;
+  --accent2:#7a5cff;
+  --card:rgba(255,255,255,0.05);
+}
+
+body {
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+}
+
+.light {
+  --bg:#f5f7fb;
+  --text:#111;
+  --card:rgba(0,0,0,0.05);
+}
+
+section {
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:40px;
+}
+
+.hero {
+  background:radial-gradient(circle at center,#111,#000);
+}
+
+button {
+  margin-top:20px;
+  padding:12px 25px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  background:linear-gradient(45deg,var(--accent),var(--accent2));
+  color:white;
+  font-size:16px;
+  transition:.3s;
+}
+
+button:hover {
+  transform:scale(1.1);
+  box-shadow:0 0 20px var(--accent);
+}
+
+.cards {
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.card {
+  width:260px;
+  padding:20px;
+  border-radius:15px;
+  background:var(--card);
+  backdrop-filter:blur(10px);
+  transition:.3s;
+}
+
+.card:hover {
+  transform:translateY(-10px);
+  box-shadow:0 0 20px var(--accent);
+}
+
+a {
+  color:var(--accent);
+}
+
+canvas {
+  background:#000;
+  border-radius:10px;
+  margin-top:20px;
+}
+
+.panel {
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  background:var(--card);
+  padding:15px;
+  border-radius:15px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ГЛАВНАЯ -->
+<section class="hero">
+  <h1>Магнитное поле тока</h1>
+  <p>Интерактивный проект по физике</p>
+  <button onclick="goTo('theory')">Начать</button>
+</section>
+
+<!-- ТЕОРИЯ -->
+<section id="theory">
+  <h2>Теория</h2>
+
+  <div class="cards">
+    <div class="card">
+      <h3>Магнитное поле</h3>
+      Возникает вокруг проводника с током.
+    </div>
+
+    <div class="card">
+      <h3>Правило правой руки</h3>
+      Направление поля определяется пальцами руки.
+    </div>
+
+    <div class="card">
+      <h3>Сила тока</h3>
+      Чем больше ток — тем сильнее поле.
+    </div>
+
+    <div class="card">
+      <h3>Подробнее</h3>
+      <a href="https://ru.wikipedia.org/wiki/Магнитное_поле" target="_blank">Открыть источник</a>
+    </div>
+  </div>
+
+  <button onclick="goTo('sim')">К симуляции</button>
+</section>
+
+<!-- СИМУЛЯЦИЯ -->
+<section id="sim">
+  <h2>Симуляция</h2>
+  <canvas id="canvas" width="500" height="500"></canvas>
+</section>
+
+<!-- ПАНЕЛЬ -->
+<div class="panel">
+  <button onclick="toggleCurrent()">Вкл/Выкл</button><br><br>
+  <input type="range" id="range" min="1" max="10" value="5"><br><br>
+  <button onclick="reverse()">Направление</button><br><br>
+  <button onclick="toggleTheme()">Тема</button>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let running = true;
+let direction = 1;
+let strength = 5;
+
+// частицы
+let particles = [];
+
+for(let i=0;i<150;i++){
+  particles.push({
+    angle: Math.random()*Math.PI*2,
+    radius: Math.random()*200,
+    speed: 0.01 + Math.random()*0.02
+  });
+}
+
+document.getElementById("range").oninput = e=>{
+  strength = +e.target.value;
+};
+
+function toggleCurrent(){
+  running = !running;
+}
+
+function reverse(){
+  direction *= -1;
+}
+
+function toggleTheme(){
+  document.body.classList.toggle("light");
+}
+
+function goTo(id){
+  document.getElementById(id).scrollIntoView({behavior:"smooth"});
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+
+  // провод
+  ctx.fillStyle="white";
+  ctx.beginPath();
+  ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fill();
+
+  // линии
+  for(let i=1;i<=strength;i++){
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(0,212,255,${0.2 + i*0.1})`;
+    ctx.arc(cx,cy,i*30,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  // частицы (3D эффект через масштаб)
+  particles.forEach(p=>{
+    if(running){
+      p.angle += p.speed * direction;
+    }
+
+    let x = cx + Math.cos(p.angle)*p.radius;
+    let y = cy + Math.sin(p.angle)*p.radius;
+
+    let scale = 1 - p.radius/300; // глубина
+
+    ctx.beginPath();
+    ctx.fillStyle = "cyan";
+    ctx.arc(x,y,3*scale,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
